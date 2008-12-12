@@ -1,7 +1,7 @@
 #!/usr/bin/en python
 import datetime
 import os
-import sys
+import unittest
 
 
 class ToDo(object):
@@ -14,8 +14,6 @@ class ToDo(object):
     def setup(self):
         """Ensure the data directory is in place."""
         if not os.path.exists(self.data_path):
-            # DRL_FIXME: This probably shouldn't print...
-            print "Creating data path '%s'..." % self.data_path
             os.mkdir(self.data_path)
     
     def load_todo(self):
@@ -78,7 +76,7 @@ class ToDo(object):
             project_filter = project
             
             if not project_filter.startswith('@'):
-                project_filter = "@%s" % project_filter
+                project_filter = "@%s " % project_filter
             
             for item in self.todos:
                 if item.startswith(project_filter):
@@ -90,40 +88,64 @@ class ToDo(object):
         return todos
 
 
-def usage():
-    print """Usage: %s <command> [options]"""
-    sys.exit()
+class TestToDo(unittest.TestCase):
+    def setUp(self):
+        # DRL_FIXME: This need mocking to replace file access.
+        self.data_path = os.path.join('~', '.todone_test')
+        self.todo = ToDo(self.data_path)
+        self.sample_todos = ['One', 'Two', '@work Three', '@home Four', '@work Five']
+    
+    def test_list_tasks(self):
+        # Check empty.
+        self.assertEqual(self.todo.list(), [])
+        
+        self.todo.todos = ['One', 'Two', '@work Three', '@home Four', '@work Five']
+        self.assertEqual(self.todo.list(), ['One', 'Two', '@work Three', '@home Four', '@work Five'])
+        
+        # Check project filtering.
+        self.assertEqual(self.todo.list(project='work'), ['@work Three', '@work Five'])
+        self.assertEqual(self.todo.list(project='home'), ['@home Four'])
+    
+    def test_add_task(self):
+        # DRL_FIXME: Move to a real unit test and create a command-line script.
+        # Test.
+        self.todo.add('First Task')
+        self.assertEqual(self.todo.list(), ['First Task'])
+
+        self.todo.add('Second Task')
+        self.assertEqual(self.todo.list(), ['First Task', 'Second Task'])
+        
+        self.todo.add('@work Third Task')
+        self.assertEqual(self.todo.list(), ['First Task', 'Second Task', '@work Third Task'])
+    
+    def test_load_todo(self):
+        # DRL_FIXME: This need mocking to replace file access.
+        self.todo.load_todo()
+    
+    def test_save_todo(self):
+        # DRL_FIXME: This need mocking to replace file access.
+        self.todo.save_todo()
+    
+    def load_sample_todos(self):
+        for item in self.sample_todos:
+            self.todo.add(item)
+    
+    def test_edit_task(self):
+        self.load_sample_todos()
+        self.todo.edit(0, 'First Edited Task')
+        self.assertEqual(self.todo.list(), ['First Edited Task', 'Two', '@work Three', '@home Four', '@work Five'])
+    
+    def test_mark_task_done(self):
+        self.load_sample_todos()
+        self.todo.done(0)
+        self.assertEqual(self.todo.list(), ['Two', '@work Three', '@home Four', '@work Five'])
+    
+    def test_delete_task(self):
+        self.load_sample_todos()
+        self.todo.delete(1)
+        self.assertEqual(self.todo.list(), ['One', '@work Three', '@home Four', '@work Five'])
 
 
 if __name__ == '__main__':
-    data_path = os.path.join('~', '.todone')
-    todo = ToDo(data_path)
-    
-    # DRL_FIXME: Move to a real unit test and create a command-line script.
-    # Test.
-    todo.add('First Task')
-    print todo.list()
-    print
-    
-    todo.add('Second Task')
-    todo.add('@work Third Task')
-    print todo.list()
-    print
-    print todo.list(project='work')
-    print
-    
-    todo.load_todo()
-    print todo.list()
-    
-    todo.done(0)
-    print todo.list()
-    print
-    
-    todo.delete(1)
-    print todo.list()
-    print
-    
-    todo.done(0)
-    print todo.list()
-    print
+    unittest.main()
     

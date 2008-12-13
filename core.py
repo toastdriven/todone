@@ -15,11 +15,21 @@ class ToDo(object):
         self.todotxt_path = os.path.join(self.data_path, TODO_FILENAME)
         self.donetxt_path = os.path.join(self.data_path, DONE_FILENAME)
         self.todos = []
+        
+        self.load_todo()
     
     def setup(self):
         """Ensure the data directory is in place."""
         if not os.path.exists(self.data_path):
             os.mkdir(self.data_path)
+        
+        if not os.path.exists(self.todotxt_path):
+            # 'Touch' the file. Works regardless of the file's existence (unlike os.utime).
+            open(self.todotxt_path, 'a').close()
+        
+        if not os.path.exists(self.donetxt_path):
+            # 'Touch' the file. Works regardless of the file's existence (unlike os.utime).
+            open(self.todotxt_path, 'a').close()
     
     def load_todo(self):
         self.setup()
@@ -53,10 +63,7 @@ class ToDo(object):
     def get(self, number, project=None):
         """Gets a todo item from the todo list by index."""
         todos = self.list(project=project)
-        
-        if number < 0 or number > len(todos) -1:
-            raise RuntimeError('That todo item number is not within the todo list.')
-        
+        self.check_todo_number(number, todos)
         return todos[number]
     
     def add(self, item):
@@ -65,20 +72,25 @@ class ToDo(object):
         self.todos.append(item)
         self.save_todo()
     
-    def check_todo_number(self, number):
+    def check_todo_number(self, number, todos=None):
         """Ensure the todo item number falls within the todo list."""
-        if number < 0 or number > len(self.todos) -1:
+        if not todos:
+            todos = self.todos
+        
+        if number < 0 or number > len(todos) - 1:
             raise RuntimeError('That todo item number is not within the todo list.')
     
-    def done(self, number):
+    def done(self, number, project=None):
         """Mark a todo item as complete."""
         self.check_todo_number(number)
+        todos = self.list(project)
+        
         done_item = self.todos[number]
         self.delete(number)
         self.save_todo()
         self.save_to_done(done_item)
     
-    def delete(self, number):
+    def delete(self, number, project=None):
         """Removes a todo item from the todo list permanently."""
         self.check_todo_number(number)
         del(self.todos[number])
@@ -114,6 +126,7 @@ class ToDo(object):
 class TestToDo(unittest.TestCase):
     def setUp(self):
         self.data_path = os.path.join('/tmp', 'todone_test')
+        self.nuke_test_dir()
         self.todo = ToDo(self.data_path)
         self.sample_todos = ['One', 'Two', '@work Three', '@home Four', '@work Five']
     
@@ -124,15 +137,10 @@ class TestToDo(unittest.TestCase):
         os.rmdir(self.data_path)
     
     def test_setup(self):
-        if os.path.exists(self.data_path):
-            self.nuke_test_dir()
-        
         self.todo.setup()
         self.assertEqual(os.path.exists(self.data_path), True)
-        self.nuke_test_dir()
     
     def test_save_to_done(self):
-        self.nuke_test_dir()
         self.todo.save_to_done("This is a test.")
         
         done_file_contents = open(os.path.join(self.data_path, DONE_FILENAME)).read()
@@ -182,8 +190,6 @@ class TestToDo(unittest.TestCase):
         
         self.todo.load_todo()
         self.assertEqual(self.todo.list(), ['First', 'Second', 'Third'])
-        
-        self.nuke_test_dir()
     
     def test_save_todo(self):
         self.nuke_test_dir()
@@ -192,8 +198,6 @@ class TestToDo(unittest.TestCase):
         
         todo_file_contents = open(os.path.join(self.data_path, TODO_FILENAME)).read()
         self.assertEqual(todo_file_contents, 'One\nTwo\n@work Three\n@home Four\n@work Five\n')
-        
-        self.nuke_test_dir()
     
     def load_sample_todos(self):
         for item in self.sample_todos:
@@ -227,7 +231,7 @@ class TestToDo(unittest.TestCase):
         self.assertRaises(RuntimeError, self.todo.delete, 5)
     
     def test_get(self):
-        self.todo.todos = self.sample_todos
+        self.load_sample_todos()
         
         # Test all.
         self.assertEqual(self.todo.get(0), 'One')

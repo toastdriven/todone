@@ -3,7 +3,7 @@
 import datetime
 import os
 import sys
-from core import ToDo, PROJECT_PREPEND_STRING
+from todone.core import ToDo, PROJECT_PREPEND_STRING
 
 
 def usage():

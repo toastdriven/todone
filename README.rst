@@ -18,7 +18,7 @@ frontend is included and a GUI frontend is in the works.
 Requirements
 ------------
 
-  * Python 2.5+ (Tested on 2.5 & 2.6, may work in lower versions)
+  * Python 2.5+ (Tested on 2.5 & 2.6)
   * A Unix-like OS (May work on Windows but untested)
 
 
@@ -33,16 +33,16 @@ From the Cheeseshop:
 From source:
 
   * Place ``todone`` directory someplace on your PYTHONPATH.
-  * For convenience, you may wish to symlink ``bin/todone.py`` into 
+  * For convenience, you may wish to copy ``bin/todone.py`` into 
     ``/usr/local/bin`` or elsewhere on your path. Remember to add execute 
-    permissions to the symlink.
+    permissions to the script.
 
 
 Usage
 -----
 
 The command-line version is located in the ``bin`` directory. As stated in the 
-installation instructions, you may wish to symlink this onto your PATH for easy 
+installation instructions, you may wish to copy this onto your PATH for easy 
 access.
 
 The CLI supports the following commands/options:

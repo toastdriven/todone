@@ -74,8 +74,14 @@ class ToDo(object):
     
     def check_todo_number(self, number, todos=None):
         """Ensure the todo item number falls within the todo list."""
-        if not todos:
+        if todos is None:
             todos = self.todos
+        
+        if not isinstance(todos, list) and not isinstance(todos, tuple):
+            raise RuntimeError('An invalid todo list was provided by the application.')
+        
+        if len(todos) == 0:
+            raise RuntimeError('That todo item number is not within the todo list as no matching todos were found.')
         
         if number < 0 or number > len(todos) - 1:
             raise RuntimeError('That todo item number is not within the todo list.')
@@ -165,10 +171,13 @@ class TestToDo(unittest.TestCase):
         self.assert_(done_file_contents.startswith("This is a test. COMPLETED:"))
     
     def test_check_todo_number(self):
-        self.todo.todos = self.sample_todos
+        self.load_sample_todos()
         self.assertEqual(self.todo.check_todo_number(0), None)
+        self.assertEqual(self.todo.check_todo_number(0, [1, 2]), None)
         self.assertRaises(RuntimeError, self.todo.check_todo_number, -1)
         self.assertRaises(RuntimeError, self.todo.check_todo_number, 5)
+        self.assertRaises(RuntimeError, self.todo.check_todo_number, 0, 'Foo')
+        self.assertRaises(RuntimeError, self.todo.check_todo_number, 0, [])
     
     def test_list_tasks(self):
         # Check empty.

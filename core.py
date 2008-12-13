@@ -80,27 +80,45 @@ class ToDo(object):
         if number < 0 or number > len(todos) - 1:
             raise RuntimeError('That todo item number is not within the todo list.')
     
+    def get_true_offset(self, item_string):
+        for index, item in enumerate(self.todos):
+            if item == item_string:
+                return index
+        
+        raise RuntimeError('The requested item no longer appears in the list. Data corruption?')
+    
     def done(self, number, project=None):
         """Mark a todo item as complete."""
         self.check_todo_number(number)
-        todos = self.list(project)
         
-        done_item = self.todos[number]
-        self.delete(number)
-        self.save_todo()
+        # If a project is specified, get the true offset (from the full list) to mark as complete.
+        done_item = self.get(number, project)
+        true_offset = self.get_true_offset(done_item)
+        
+        self.delete(true_offset)
         self.save_to_done(done_item)
     
     def delete(self, number, project=None):
         """Removes a todo item from the todo list permanently."""
         self.check_todo_number(number)
-        del(self.todos[number])
+        
+        # If a project is specified, get the true offset (from the full list) to mark as complete.
+        delete_item = self.get(number, project)
+        true_offset = self.get_true_offset(delete_item)
+        
+        del(self.todos[true_offset])
         self.save_todo()
     
-    def edit(self, number, item):
+    def edit(self, number, item, project=None):
         """Edits todo item within the todo list."""
         self.verify_item_string(item)
         self.check_todo_number(number)
-        self.todos[number] = item
+        
+        # If a project is specified, get the true offset (from the full list) to mark as complete.
+        edit_item = self.get(number, project)
+        true_offset = self.get_true_offset(edit_item)
+        
+        self.todos[true_offset] = item
         self.save_todo()
     
     def list(self, project=None):
@@ -208,27 +226,45 @@ class TestToDo(unittest.TestCase):
         self.todo.edit(0, 'First Edited Task')
         self.assertEqual(self.todo.list(), ['First Edited Task', 'Two', '@work Three', '@home Four', '@work Five'])
         
+        # Edit within a project.
+        self.todo.edit(0, '@work Three Edited Task', project='work')
+        self.assertEqual(self.todo.list(), ['First Edited Task', 'Two', '@work Three Edited Task', '@home Four', '@work Five'])
+        
         # Fail if non-existent.
         self.assertRaises(RuntimeError, self.todo.edit, -1, 'Please Fail')
         self.assertRaises(RuntimeError, self.todo.edit, 5, 'Please Fail')
+        self.assertRaises(RuntimeError, self.todo.edit, -1, 'Please Fail', 'work')
+        self.assertRaises(RuntimeError, self.todo.edit, 2, 'Please Fail', 'work')
     
     def test_mark_task_done(self):
         self.load_sample_todos()
         self.todo.done(0)
         self.assertEqual(self.todo.list(), ['Two', '@work Three', '@home Four', '@work Five'])
         
+        # Done within a project.
+        self.todo.done(0, project='work')
+        self.assertEqual(self.todo.list(), ['Two', '@home Four', '@work Five'])
+        
         # Fail if non-existent.
         self.assertRaises(RuntimeError, self.todo.done, -1)
         self.assertRaises(RuntimeError, self.todo.done, 5)
+        self.assertRaises(RuntimeError, self.todo.done, -1, 'work')
+        self.assertRaises(RuntimeError, self.todo.done, 1, 'work')
     
     def test_delete_task(self):
         self.load_sample_todos()
         self.todo.delete(1)
         self.assertEqual(self.todo.list(), ['One', '@work Three', '@home Four', '@work Five'])
         
+        # Delete within a project.
+        self.todo.delete(0, project='work')
+        self.assertEqual(self.todo.list(), ['One', '@home Four', '@work Five'])
+        
         # Fail if non-existent.
         self.assertRaises(RuntimeError, self.todo.delete, -1)
         self.assertRaises(RuntimeError, self.todo.delete, 5)
+        self.assertRaises(RuntimeError, self.todo.delete, -1, 'work')
+        self.assertRaises(RuntimeError, self.todo.delete, 1, 'work')
     
     def test_get(self):
         self.load_sample_todos()

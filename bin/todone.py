@@ -7,26 +7,28 @@ from core import ToDo, PROJECT_PREPEND_STRING
 
 
 def usage():
-    print """Usage: %s <command> [options]
+    print """Usage: %(filename)s <command> [options]
     
 Available Commands:
     add <todo item text>
         Adds a new todo item to the list.
     
     delete <todo number from list> [project name]
-        Permanently deletes a todo item from the list.
-        You probably want "done" instead.
+        Permanently deletes a todo item from the list. You probably want "done" instead.
+        Prepend the "project name" with an '%(project_prepend)s'.
     
     done <todo number from list> [project name]
         Marks a todo item as complete and archives it.
+        Prepend the "project name" with an '%(project_prepend)s'.
     
     edit <todo number from list> [project name] <todo item text>
         Edits a todo item within the list.
+        Prepend the "project name" with an '%(project_prepend)s'.
     
     list [project name]
         Without the "project name" option, shows all todo items.
-        With the "project name" option, shows only todo items within that project.
-    """ % os.path.basename(sys.argv[0])
+        With the "%(project_prepend)sproject name" option, shows only todo items within that project.
+    """ % {'filename': os.path.basename(sys.argv[0]), 'project_prepend': PROJECT_PREPEND_STRING}
     sys.exit()
 
 
@@ -44,6 +46,9 @@ def delete_item(todo, remaining_args):
     
     if remaining_args:
         project = remaining_args.pop(0)
+        
+        if project.startswith(PROJECT_PREPEND_STRING):
+            project = project.replace(PROJECT_PREPEND_STRING, '')
     
     old_item = todo.get(correct_offset, project)
     todo.delete(correct_offset, project)
@@ -58,6 +63,9 @@ def mark_item_as_done(todo, remaining_args):
     
     if remaining_args:
         project = remaining_args.pop(0)
+        
+        if project.startswith(PROJECT_PREPEND_STRING):
+            project = project.replace(PROJECT_PREPEND_STRING, '')
     
     old_item = todo.get(correct_offset, project)
     todo.done(correct_offset, project)
@@ -87,7 +95,7 @@ def list_todos(todo, remaining_args):
     project_filter = None
     
     if remaining_args:
-        project_filter = remaining_args.pop(0)
+        project_filter = remaining_args.pop(0).replace(PROJECT_PREPEND_STRING, '')
         todos = todo.list(project=project_filter)
     else:
         todos = todo.list()

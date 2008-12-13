@@ -50,6 +50,15 @@ class ToDo(object):
         if not item_string:
             raise AttributeError('Please provide todo item text.')
     
+    def get(self, number, project=None):
+        """Gets a todo item from the todo list by index."""
+        todos = self.list(project=project)
+        
+        if number < 0 or number > len(todos) -1:
+            raise RuntimeError('That todo item number is not within the todo list.')
+        
+        return todos[number]
+    
     def add(self, item):
         """Appends a new todo item onto the todo list."""
         self.verify_item_string(item)
@@ -216,6 +225,26 @@ class TestToDo(unittest.TestCase):
         # Fail if non-existent.
         self.assertRaises(RuntimeError, self.todo.delete, -1)
         self.assertRaises(RuntimeError, self.todo.delete, 5)
+    
+    def test_get(self):
+        self.todo.todos = self.sample_todos
+        
+        # Test all.
+        self.assertEqual(self.todo.get(0), 'One')
+        self.assertEqual(self.todo.get(1), 'Two')
+        self.assertEqual(self.todo.get(2), '@work Three')
+        self.assertEqual(self.todo.get(3), '@home Four')
+        self.assertEqual(self.todo.get(4), '@work Five')
+        
+        # Test within project.
+        self.assertEqual(self.todo.get(0, project='work'), '@work Three')
+        self.assertEqual(self.todo.get(1, project='work'), '@work Five')
+        
+        # Fail on non-existent.
+        self.assertRaises(RuntimeError, self.todo.get, -1)
+        self.assertRaises(RuntimeError, self.todo.get, 5)
+        self.assertRaises(RuntimeError, self.todo.get, -1, 'work')
+        self.assertRaises(RuntimeError, self.todo.get, 2, 'work')
 
 
 if __name__ == '__main__':

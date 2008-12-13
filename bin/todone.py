@@ -1,4 +1,4 @@
-#!/usr/bin/en python
+#!/usr/bin/env python
 """A command-line front-end for todone."""
 import datetime
 import os
